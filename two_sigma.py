@@ -176,17 +176,17 @@ print(len(df.id.value_counts())) # 1424 categories
 
 ## filter out a new data frame which only has needed columns (including id, 
 ## highly correlated variables and y)
-df_filtered = df.ix[:, ['id', 'technical_20', 'fundamental_11', 'technical_27',
-                        'y']]
+df_filtered = df.ix[:, ['id', 'technical_20', 'fundamental_11', 'technical_30',
+                        'technical_19', 'y']]
 print(df_filtered.info())
 
 ## fill each column with rows with NAs using the mean for each id 
-for col in ['technical_20', 'fundamental_11', 'technical_27']:
-    mean_dict = dict(df_filtered.groupby(['id'])[col].mean())    
-    na_ind = df_filtered[col].isnull()
-    df_filtered[col][na_ind] = df_filtered['id'][na_ind]
-    df_filtered[col][na_ind] = df_filtered[col][na_ind].map(mean_dict)
-    df_filtered[col].fillna(df_filtered[col].mean(), inplace=True)
+for col in ['technical_20', 'fundamental_11', 'technical_30', 'technical_19']:
+    #median_dict = dict(df_filtered.groupby(['id'])[col].median())    
+    #na_ind = df_filtered[col].isnull()
+    #df_filtered[col][na_ind] = df_filtered['id'][na_ind]
+    #df_filtered[col][na_ind] = df_filtered[col][na_ind].map(median_dict)
+    df_filtered[col].fillna(df_filtered[col].median(), inplace=True)
 print(df_filtered.isnull().any())    
         
 ## find out where are the borders of extreme large and small values
@@ -271,12 +271,77 @@ print(model.score(X_tr, y_tr))
 print(model.score(X_te, y_te))
 
 ## Ridge Regression
+from sklearn.cross_validation import train_test_split
+X_tr, X_te, y_tr, y_te = train_test_split(df_y_filtered.ix[:, [0, 1, 2]].values,
+                                          df_y_filtered.ix[:, ['y']].values,
+                                            test_size=0.2)
+
 from sklearn.linear_model import Ridge
 import timeit
 start_time = timeit.default_timer()
-model = Ridge(alpha=10)
-print(cross_val_score(model, X_tr, y_tr, cv=5))
+model = Ridge(alpha=1)
+print(cross_val_score(model, X_tr, y_tr, cv=10))
 elapsed = timeit.default_timer() - start_time
 print(elapsed) 
 
+model.fit(X_tr, y_tr)
+
 print(model.score(X_te, y_te))
+
+## Linear Regression
+from sklearn.cross_validation import train_test_split
+X_tr, X_te, y_tr, y_te = train_test_split(df_y_filtered.ix[:, [0, 1, 2]].values,
+                                          df_y_filtered.ix[:, ['y']].values,
+                                            test_size=0.2)
+
+from sklearn.linear_model import LinearRegression
+import timeit
+start_time = timeit.default_timer()
+model = LinearRegression()
+print(cross_val_score(model, X_tr, y_tr, cv=10))
+elapsed = timeit.default_timer() - start_time
+print(elapsed) 
+
+model.fit(X_tr, y_tr)
+
+print(model.score(X_te, y_te))
+
+
+### Linear Regression Test
+import os 
+os.chdir(r'D:\Dataset\kaggle_competition_Two Sigma Financial Modeling Challenge\train.h5')
+
+with pd.HDFStore("train.h5", "r") as train:
+    df = train.get("train")
+    
+import os 
+os.chdir(r'D:\Project\kaggle_competition_Two_Sigma_Financial_Modeling_Challenge')
+
+df_filtered = df.ix[:, ['id', 'technical_20', 'fundamental_11', 'technical_30',
+                        'y']]
+
+df_filtered.fillna(df_filtered.median(), inplace=True)                
+
+min_border = np.histogram(df_filtered.y, bins=100, range=[-0.1, 0.1])[1][7]
+max_border = np.histogram(df_filtered.y, bins=100, range=[-0.1, 0.1])[1][96]
+
+min_ind = df_filtered.y<min_border
+max_ind = df_filtered.y>=max_border
+border_ind = min_ind|max_ind
+
+df_y_filtered = df_filtered.ix[~border_ind, :]
+
+df_y_filtered.drop(['id'], axis=1, inplace=True)     
+
+from sklearn.cross_validation import train_test_split
+X_tr, X_te, y_tr, y_te = train_test_split(df_y_filtered.ix[:, [0, 1, 2]].values,
+                                          df_y_filtered.ix[:, ['y']].values,
+                                            test_size=0.2)
+
+from sklearn.linear_model import LinearRegression
+import timeit
+start_time = timeit.default_timer()
+model = LinearRegression()
+print(cross_val_score(model, X_tr, y_tr, cv=10))
+elapsed = timeit.default_timer() - start_time
+print(elapsed)  
