@@ -22,7 +22,7 @@ train_data = observation.train
 
 # Columns for training
 #cols = [col for col in train_data_cleaned.columns if "technical_" in col]
-cols = ['technical_20', 'fundamental_11', 'technical_30']
+cols = ['technical_20', 'fundamental_11', 'technical_30', 'technical_19']
 print(cols)
 
 low_y_cut = -0.086
@@ -43,8 +43,9 @@ x_train = train_cut[cols]
 y = train_cut["y"]
 
 from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
 
-lr_model = LinearRegression()
+lr_model = Ridge(alpha=1)
 
 print(x_train.shape)
 print(y.shape)

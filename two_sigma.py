@@ -188,7 +188,50 @@ for col in ['technical_20', 'fundamental_11', 'technical_30', 'technical_19']:
     #df_filtered[col][na_ind] = df_filtered[col][na_ind].map(median_dict)
     df_filtered[col].fillna(df_filtered[col].median(), inplace=True)
 print(df_filtered.isnull().any())    
-        
+
+"""
+build models on specific model
+"""
+
+# take technical_20 as an example 
+tec_20 = []
+value_count_ind = list(df_filtered['id'].value_counts().index)
+value_count = df_filtered['id'].value_counts()
+large_id = [x for x in value_count_ind if value_count[x]>=500]
+
+for index in large_id:
+    cor = pearsonr(df_filtered.ix[df_filtered['id']==index, ['technical_20']],
+                   df_filtered.ix[df_filtered['id']==index, ['y']])[0]
+    tec_20.append(cor)
+tec_20 = np.array(tec_20).ravel()
+
+##########
+from collections import defaultdict
+high_cor_dict = defaultdict(list)
+col_name = ['technical_20', 'fundamental_11', 'technical_30']
+value_count_ind = list(df_filtered['id'].value_counts().index)
+value_count = df_filtered['id'].value_counts()
+large_id = [x for x in value_count_ind if value_count[x]>=500]
+
+for col in col_name:
+    for ind in large_id:
+            cor = pearsonr(df_filtered.ix[df_filtered['id']==ind, [col]],
+                   df_filtered.ix[df_filtered['id']==ind, ['y']])[0]
+            high_cor_dict[col].append(cor)
+            
+for col in col_name:
+    high_cor_dict[col] = np.array(high_cor_dict[col]).ravel()
+
+
+high_cor_ind = (high_cor_dict['technical_20']>0.05)|(high_cor_dict['fundamental_11']>0.05)|(high_cor_dict['technical_30']>0.05)
+
+high_cor_ind = [ind for (ind, x) in enumerate(high_cor_ind) if x==True]
+high_cor_id = np.array(large_id)[high_cor_ind]
+
+
+"""
+"""
+
 ## find out where are the borders of extreme large and small values
 cum_count = np.histogram(df_filtered.y, bins=100, range=[-0.1, 0.1])[0].cumsum()
 bin_name = np.histogram(df_filtered.y, bins=100, range=[-0.1, 0.1])[1]
